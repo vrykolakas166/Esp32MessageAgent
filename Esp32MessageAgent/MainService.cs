@@ -53,6 +53,7 @@ namespace Esp32MessageAgent
 
                             _serialPort = new SerialPort(COM_PORT, 115200)
                             {
+                                Encoding = System.Text.Encoding.UTF8,
                                 NewLine = "\n",
                                 DtrEnable = true,
                                 RtsEnable = true,
@@ -96,6 +97,11 @@ namespace Esp32MessageAgent
         {
             try
             {
+                if (_serialPort?.IsOpen == false)
+                {
+                    return;
+                }
+
                 var line = _serialPort.ReadLine()?.Trim();
                 if (!string.IsNullOrWhiteSpace(line))
                 {
@@ -104,6 +110,11 @@ namespace Esp32MessageAgent
                     if (line.Equals("request_shutdown", StringComparison.OrdinalIgnoreCase))
                     {
                         Log("Request shutdown command received from ESP32.");
+                        if (_shutdownCts != null)
+                        {
+                            _shutdownCts.Cancel();
+                            _shutdownCts.Dispose();
+                        }
                         _shutdownCts = new CancellationTokenSource();
                         Task.Run(() => RequestShutdownComputer(_shutdownCts.Token)); // Run async safely
                     }
@@ -184,8 +195,11 @@ namespace Esp32MessageAgent
         {
             try
             {
-                string logMessage = $"{DateTime.Now:yyyy-MM-dd HH:mm:ss} - {message}\n";
-                File.AppendAllText("D:\\Wolfy Inc\\Publish\\Esp32Service\\Esp32ServiceLog.txt", logMessage);
+                string logPath = "D:\\Wolfy Inc\\Publish\\Esp32Service\\Esp32ServiceLog.txt";
+                using (var sw = new StreamWriter(logPath, true))
+                {
+                    sw.WriteLine($"{DateTime.Now:dd/MM/yyyy HH:mm:ss} - {message}");
+                }
             }
             catch
             {
