@@ -104,6 +104,7 @@ namespace Esp32MessageAgent
                     if (line.Equals("request_shutdown", StringComparison.OrdinalIgnoreCase))
                     {
                         Log("Request shutdown command received from ESP32.");
+                        _shutdownCts = new CancellationTokenSource();
                         Task.Run(() => RequestShutdownComputer(_shutdownCts.Token)); // Run async safely
                     }
                     else if (line.Equals("cancel_shutdown", StringComparison.OrdinalIgnoreCase))
